@@ -1,1 +1,6 @@
 rename/copy this dir into 'config' and adjust the values to your needs
+
+e.g.
+
+cp sample_config config
+vim config/main.pl
