@@ -51,3 +51,6 @@ Session.vim
 tags
 # Persistent undo
 [._]*.un~
+
+
+/config/
