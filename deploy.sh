@@ -16,7 +16,7 @@ CONFIG_PATH='/etc/home_automation/'
 # cp strom.pl ${INSTALL_PATH}
 # cp solar.pl ${INSTALL_PATH}
 # cp prometheus.psgi ${INSTALL_PATH}
-# cp auto_ac.pl ${INSTALL_PATH}
+cp auto_ac.pl ${INSTALL_PATH}
 cp get_weather.pl ${INSTALL_PATH}
 cp sensors_collector.pl ${INSTALL_PATH}
 
