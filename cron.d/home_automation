@@ -1,0 +1,9 @@
+# TODO: all this should not be run a root. figure out if it can run a none-root user and fix it if not.
+MAILTO=root
+*/20 * * * *     root /usr/local/lib/home_automation/auto_ac.pl > /dev/null
+# 58 * * * *	root /root/get_pressure.pl
+*/3 * * * *     root //usr/local/lib/home_automation/sensors_collector.pl > /tmp/heat.pl.tmp && mv /tmp/heat.pl.tmp /tmp/heat.pl
+41 6 * * *	root /usr/local/lib/home_automation/get_weather.pl
+# 49 6 * * *	root /usr/local/lib/home_automation/shutter.pl 0 1
+04 20 * * *	root /usr/local/lib/home_automation/get_weather.pl
+# 13 20 * * *	root /usr/local/lib/home_automation/shutter.pl 1
