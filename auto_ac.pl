@@ -2,8 +2,9 @@
 
 # our laws are broken in a way that we have to pay high prices if we take electricity from the grid
 # but get payed much less if we give energy back.
-# so, i burn as much energy as possible in the ACs to have a nice
+# so, i use as much energy as possible in the ACs to have a nice
 # cool house once I come home from work and the sun is alredy low or gone.
+# better than giving it away more or less for free.
 #
 # this turns your ACs on and off automatically.
 # it factors in:
