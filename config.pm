@@ -31,6 +31,7 @@ sub init {
 		$self->{config_location} = "$FindBin::Bin/config/main.pl";
 	}
 	my %config;
+	# say "reading config at: $self->{config_location}";
 	try {
 		eval slurp $self->{config_location};
 	}

@@ -18,9 +18,10 @@ CONFIG_PATH='/etc/home_automation/'
 # cp prometheus.psgi ${INSTALL_PATH}
 # cp auto_ac.pl ${INSTALL_PATH}
 cp get_weather.pl ${INSTALL_PATH}
+cp sensors_collector.pl ${INSTALL_PATH}
 
 
-# cp qmel.pm ${INSTALL_PATH}perl/
+cp qmel.pm ${INSTALL_PATH}perl/
 cp get_weather.pm ${INSTALL_PATH}perl/
 cp config.pm ${INSTALL_PATH}perl/
 
