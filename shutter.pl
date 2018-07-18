@@ -7,6 +7,11 @@
 # shutter.pl <tomorrow> <doit>
 # tomorrow: 0 use today, 1 use tomorrow to operate on data of a full day.
 # doit: has to be 1 to actually execute something.
+# 
+# run shutter.pl 0 1 early in the morning.
+# it will check the weather and sun positions over the day and calculate the times for the shutters to be closed.
+# then it uses fhem to send scene commands with time offsets to the tahoma cloud.
+# please keep in mind, the tahoma box looses all stored future commands if power is lost.
 
 use strict;
 use warnings;
