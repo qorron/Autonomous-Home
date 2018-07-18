@@ -105,3 +105,61 @@ $config{ac}{rooms} = {
 		serial  => 34567,
 	},
 };
+
+
+
+$config{shutter} = {
+	temperature_threshold => 24, # do not close below that
+	hot_day_temperature   => 26, # beyond that the day is considered hot
+	altitude              => 25, # close while sun is higher than that
+	hot_day_altitude      => 20, # close early on a hot day
+	min_bright_hours      => 2,  # do not close on a cloudy day
+	cloudiness_threshold  => 70, # transform hourly 0 - 100% values to yes/no for countimg
+	overlap_hours		  => 2,  # not used at the moment
+};
+
+# fhem ( https://fhem.de/ ) calls to trigger scens:
+# fhem.pl <port> "set tahoma_<scene_id> startAt <msec_from_now>"
+# e.g.
+# fhem.pl 7072 "set tahoma_123 startAt 3600000"
+# means: "start tahoma_123 in one hour"
+$config{shutter}{presets} = {
+	day_n_down  => '', # 18
+	day_n_up    => '', # 06
+	day_ne_down => '', # 21
+	day_ne_up   => '', # 09
+	day_e_down  => '', # 00
+	day_e_up    => '', # 12
+	day_se_down => 'tahoma_1', # 03
+	day_se_up   => 'tahoma_2', # 15
+	day_s_down  => '', # 06
+	day_s_up    => '', # 18
+	day_sw_down => 'tahoma_3', # 09
+	day_sw_up   => 'tahoma_4', # 21
+	day_w_down  => '', # 12
+	day_w_up    => '', # 24
+	day_nw_down => 'tahoma_5', # 15
+	day_nw_up   => 'tahoma_6', # 03
+};
+
+# time offsets to allow for a brighter flat during the time that side is still in the shade.
+my $h = 3_600_000; # one hour in tahoma units (ms)
+$config{shutter}{offsets} = {
+	day_n_down  => 0,          # 18
+	day_n_up    => 0,          # 06
+	day_ne_down => 0,          # 21
+	day_ne_up   => -2 * $h,    # 09
+	day_e_down  => 0,          # 00
+	day_e_up    => -1.5 * $h,    # 12
+	day_se_down => 0,          # 03
+	day_se_up   => -1 * $h,    # 15
+	day_s_down  => 0.5 * $h,     # 06
+	day_s_up    => -0.5 * $h,    # 18
+	day_sw_down => 1 * $h,     # 09
+	day_sw_up   => 0,          # 21
+	day_w_down  => 1.5 * $h,     # 12
+	day_w_up    => 0,          # 24
+	day_nw_down => 2 * $h,     # 15
+	day_nw_up   => 0,          # 03
+};
+

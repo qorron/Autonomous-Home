@@ -12,7 +12,7 @@ CONFIG_PATH='/etc/home_automation/'
 # cp mqtt_.pl ${INSTALL_PATH}
 # cp AP_names.pl ${INSTALL_PATH}
 # cp get_pressure.pl ${INSTALL_PATH}
-# cp shutter.pl ${INSTALL_PATH}
+cp shutter.pl ${INSTALL_PATH}
 # cp strom.pl ${INSTALL_PATH}
 # cp solar.pl ${INSTALL_PATH}
 # cp prometheus.psgi ${INSTALL_PATH}
