@@ -163,3 +163,101 @@ $config{shutter}{offsets} = {
 	day_nw_up   => 0,          # 03
 };
 
+
+
+
+
+$config{mqtt}{common} = {
+# to safely quote your passwords please refer to:
+# https://perldoc.perl.org/5.26.0/perlop.html#Quote-Like-Operators
+# 	SSId1       => 'ssid1',
+# 	Password1   => 'pass1',
+# 	SSId2       => 'ssid2',
+# 	Password2   => 'pass2',
+	FullTopic   => "tasmota/%topic%/%prefix%/", # please leave that unchanged since the script depends on that!
+	OtaUrl      => 'http://192.168.2.2:80/api/arduino/sonoff.ino.bin',
+	LogHost     => '192.168.2.2',
+	LogPort     => '514',
+	SysLog      => '2',                                                                   # 0 off, 1 error, 2 info, 3 debug, 4 all
+	Timezone    => '99',
+	PowerRetain => '1',
+	seriallog   => '0',    # gets in the way of submodule communication
+	SetOption26 => 0,      # 0 (default) Keep using POWER without postfix for single power devices
+	                       # 1 Add postfix to all POWER messages
+};
+# Modules: (at the time of writing)
+#  1 (Sonoff Basic)     21 (Sonoff SC)
+#  2 (Sonoff RF)        22 (Sonoff BN-SZ)
+#  3 (Sonoff SV)        23 (Sonoff 4CH Pro)
+#  4 (Sonoff TH)        24 (Huafan SS)
+#  5 (Sonoff Dual)      25 (Sonoff Bridge)
+#  6 (Sonoff Pow)       26 (Sonoff B1)
+#  7 (Sonoff 4CH)       27 (AiLight)
+#  8 (S20 Socket)       28 (Sonoff T1 1CH)
+#  9 (Slampher)         29 (Sonoff T1 2CH)
+# 10 (Sonoff Touch)     30 (Sonoff T1 3CH)
+# 11 (Sonoff LED)       31 (Supla Espablo)
+# 12 (1 Channel)
+# 13 (4 Channel)
+# 14 (Motor C/AC)
+# 15 (ElectroDragon)
+# 16 (EXS Relay)
+# 17 (WiOn)
+# 18 (WeMos D1 mini)
+# 19 (Sonoff Dev)
+# 20 (H801)
+
+# module type specific config:
+$config{mqtt}{module_defaults} = {
+	10 => {    # Sonoff Touch
+		'SetOption13' => 1    # single press only
+	},
+	4 => {                    # Sonoff TH
+		'SensorRetain' => 1
+	},
+	21 => {                   # Sonoff SC
+		'SensorRetain' => 1
+	},
+};
+
+# all your modules
+$config{mqtt}{modules} = {
+	DVES_123456 => {    # the unique fallback topic
+		Module => 10,                              # Sonoff Touch
+		init   => { 'GroupTopic' => 'group1', },
+		config => {
+			'FriendlyName' => 'Wall1',
+			'Topic'        => 'wall1',
+			'ButtonTopic'  => 'group1',
+		},
+
+		# this is a precaution to deploy new stuff on devices you have good acces to
+		# they usually reside on you workbench with the serial pin header still attached to them
+		beta => 1,                                 # only beta devices are touched by default
+	},
+	DVES_234567 => {
+		Module => 10, # Sonoff Touch
+		init   => {
+			'GroupTopic' => 'group2', 
+		},
+		config => {
+			'FriendlyName' => 'Wall2', 
+			'Topic' => 'wall2', 
+			'ButtonTopic' => 'group2', 
+		},
+		beta => 0,
+	},
+	DVES_345678 => { # sonoff TH16 1
+		Module => 4,
+		init   => {
+			'GPIO14' => '4',  # temp #### gpio has broken json in 5.7.1
+			'GroupTopic' => 'group1', 
+		},
+		config => {
+			'FriendlyName' => 'TH16_1', 
+			'Topic' => 'TH16_1', 
+			'ButtonTopic' => 'group1', 
+		},
+		beta => 1,
+	},
+};
