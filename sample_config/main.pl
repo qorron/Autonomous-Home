@@ -111,6 +111,7 @@ $config{ac}{rooms} = {
 $config{shutter} = {
 	temperature_threshold => 24, # do not close below that
 	hot_day_temperature   => 26, # beyond that the day is considered hot
+	super_hot_day_temperature   => 29, # increased overshoot beyond this
 	altitude              => 25, # close while sun is higher than that
 	hot_day_altitude      => 20, # close early on a hot day
 	min_bright_hours      => 2,  # do not close on a cloudy day

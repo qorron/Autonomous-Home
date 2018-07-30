@@ -53,7 +53,9 @@ my $qmel = qmel->new( rooms => \%rooms);
 my $heater = decode_json( slurp '/tmp/heat.json' );
 
 my $hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{hot_day_temp};
+my $super_hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{super_hot_day_temp};
 
+$overshoot++ if $super_hot_day;
 
 my @datapoints;
 my $db = DBM::Deep->new(
