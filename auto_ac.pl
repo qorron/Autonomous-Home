@@ -55,6 +55,7 @@ my $heater = decode_json( slurp '/tmp/heat.json' );
 my $hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{hot_day_temp};
 my $super_hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{super_hot_day_temp};
 
+
 $overshoot++ if $super_hot_day;
 
 my @datapoints;
@@ -81,6 +82,11 @@ else {
 
 say "We have $power_budget W of available solar power";
 
+my $status =<<STATUS;
+max temp: $weather->{cache}{max_temp_today} ($config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})
+power: $power_budget
+overshoot: $overshoot
+STATUS
 
 # my $now = $yr->location_forecast->now;
 # say "It's " . $now->temperature->celsius . "°C outside.";
@@ -177,7 +183,13 @@ elsif ( @on && @off ) {    # between limits, switch if appropiate
 		push @actions, $device;
 	}
 }
-warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@actions], ['actions'] ) if @actions;
+
+if (@actions) {
+	warn $status;
+	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@off],     ['off'] );
+	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@on],      ['on'] );
+	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@actions], ['actions'] );
+}
 
 for my $action (@actions) {
 	warn "$action->{name}: Power => $action->{power}, SetTemperature => " . ( $rooms{ $action->{name} }{target} - $overshoot );
