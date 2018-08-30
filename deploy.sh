@@ -8,7 +8,7 @@ CONFIG_PATH='/etc/home_automation/'
 
 # cp inverter.pl ${INSTALL_PATH}
 # cp heat_collector.pl ${INSTALL_PATH}
-# cp heat_.pl ${INSTALL_PATH}heat_
+cp heat_.pl ${INSTALL_PATH}heat_
 # cp mqtt_.pl ${INSTALL_PATH}
 # cp AP_names.pl ${INSTALL_PATH}
 # cp get_pressure.pl ${INSTALL_PATH}
