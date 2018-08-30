@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# inspired by: https://www.domoticz.com/forum/viewtopic.php?t=7496
+
 package qmel;
 
 use strict;
