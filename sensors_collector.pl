@@ -25,18 +25,11 @@ $Data::Dumper::Sortkeys = 1;
 
 my $config = config->new();
 
-my $json_file = $config->{files}{heater_json_file};
-my $solar_json_file = $config->{files}{solar_json_file};
-my $power_flow_json_file = $config->{files}{power_flow_json_file};
-my $power_balance_file = $config->{files}{power_balance_file};
-
 our $translation;
 our $munin;
 our $host = $config->{host};
 
-my %translation = %{$config->{heater}{translation}};
 
-my %power = %{$config->{heater}{power}};
 
 my $ua = LWP::UserAgent->new;
 
@@ -48,133 +41,157 @@ my $ua = LWP::UserAgent->new;
 # floor temp. sensors are used to determine the long term effects of the AC
 # i.e. the air gets cooled down fast but the walls and floor follow slowly but keep the low temperature longer.
 # this consists basically of recorded XHR calls from the web interface.
-$ua->agent("Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36");
-$ua->default_header( Authorization => $config->{heater}{symcon_auth} );
-
-# Create a request
-my $req = HTTP::Request->new(POST => "http://$config->{host}{symcon}:3777/api/");
-$req->content_type('application/json');
-$req->content(qq'{"jsonrpc":"2.0","method":"WFC_GetSnapshot","params":[$config->{heater}{symcon_root}],"id":$time}');
- 
-# Pass request to the user agent and get a response back
-my $res = $ua->request($req);
-
 our $stuff;
-our %subs; 
+our %subs;
 our $id0 = 'ID0';
-# Check the outcome of the response
-if ($res->is_success) {
-    $stuff = decode_json $res->content;
-	#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$stuff], ['stuff']);
 
-	my %all = (
-# 		id => $id0,
-# 		name => $stuff->{result}{objects}{$id0}{name},
-# 		subs => [],
-	);
-	#say join ' ', keys %{$stuff->{result}{objects}};
-	for my $id (keys %{$stuff->{result}{objects}}) {
-		if (exists $stuff->{result}{objects}{$id}{parentID}) {
-			#say "$id -> $stuff->{result}{objects}{$id}{parentID}";
-			if (exists $subs{"ID$stuff->{result}{objects}{$id}{parentID}"}) {
-				push @{$subs{"ID$stuff->{result}{objects}{$id}{parentID}"}}, $id;
-			} else {
-				$subs{"ID$stuff->{result}{objects}{$id}{parentID}"} = [$id];
+if ( exists $config->{host}{symcon} ) {
+	my %power = %{$config->{heater}{power}};
+	my $json_file = $config->{files}{heater_json_file};
+	my %translation = %{$config->{heater}{translation}};
+
+	$ua->agent(
+		"Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36");
+	$ua->default_header( Authorization => $config->{heater}{symcon_auth} );
+
+	# Create a request
+	my $req = HTTP::Request->new( POST => "http://$config->{host}{symcon}:3777/api/" );
+	$req->content_type('application/json');
+	$req->content(qq'{"jsonrpc":"2.0","method":"WFC_GetSnapshot","params":[$config->{heater}{symcon_root}],"id":$time}');
+
+	# Pass request to the user agent and get a response back
+	my $res = $ua->request($req);
+
+	# Check the outcome of the response
+	if ( $res->is_success ) {
+		$stuff = decode_json $res->content;
+
+		#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$stuff], ['stuff']);
+
+		my %all = (
+
+			# 		id => $id0,
+			# 		name => $stuff->{result}{objects}{$id0}{name},
+			# 		subs => [],
+		);
+
+		#say join ' ', keys %{$stuff->{result}{objects}};
+		for my $id ( keys %{ $stuff->{result}{objects} } ) {
+			if ( exists $stuff->{result}{objects}{$id}{parentID} ) {
+
+				#say "$id -> $stuff->{result}{objects}{$id}{parentID}";
+				if ( exists $subs{"ID$stuff->{result}{objects}{$id}{parentID}"} ) {
+					push @{ $subs{"ID$stuff->{result}{objects}{$id}{parentID}"} }, $id;
+				}
+				else {
+					$subs{"ID$stuff->{result}{objects}{$id}{parentID}"} = [$id];
+				}
 			}
 		}
-	}
-	# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%subs], ['subs']);
-	populate_tree($id0, \%all);
-	#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%all], ['all']);
 
-	# until here we were generic
+		# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%subs], ['subs']);
+		populate_tree( $id0, \%all );
 
-	my $rooms = {}; # = $all{"R\x{e4}ume"};
-	my $current_total_power = 0;
-	#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all{Devices}{Sw1}], ['all']);
-	for my $room (keys %{$all{"R\x{e4}ume"}}) {
-		# fca
-		my $plain_room = lc(unidecode($room));
-		my $switch_name = $room;
-		$switch_name = $translation{$room} if exists $translation{$room};
-		$rooms->{$plain_room} = $all{"R\x{e4}ume"}{$room};
-		$rooms->{$plain_room}{name} = decode('latin1', $room);
-		$rooms->{$plain_room}{max_power} = $power{$room};
-		warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
-		$rooms->{$plain_room}{powered} = $all{Devices}{Sw1}{$switch_name};
-		$rooms->{$plain_room}{current_power} = $rooms->{$plain_room}{powered} ? $rooms->{$plain_room}{max_power} : 0;
-		$current_total_power += $rooms->{$plain_room}{current_power};
-	}
+		#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%all], ['all']);
 
-	# some scripts still rely on the first implemenation of the sensor cache which was basically autogenerted perl code
-	print Data::Dumper->Dump([$rooms], ['rooms']);
-	say '$creation_time = '.time.';';
-	my %outhash = ( creation_time => time );
-	for my $rep (
-		['Raumtemperatur',   'room'],
-		['Bodentemperatur',  'floor'],
-		['Absenktemperatur', 'set_low'],
-		['Solltemperatur',   'set'],
-		['Automatik',        'auto'],
-		['Solartemperatur',  'set_solar'],
-		['Status',           'state'],
-		)
-	{
-		replace_key($rooms, @$rep);
+		# until here we were generic
+
+		my $rooms               = {};    # = $all{"R\x{e4}ume"};
+		my $current_total_power = 0;
+
+		#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all{Devices}{Sw1}], ['all']);
+		for my $room ( keys %{ $all{"R\x{e4}ume"} } ) {
+
+			# fca
+			my $plain_room  = lc( unidecode($room) );
+			my $switch_name = $room;
+			$switch_name = $translation{$room} if exists $translation{$room};
+			$rooms->{$plain_room} = $all{"R\x{e4}ume"}{$room};
+			$rooms->{$plain_room}{name} = decode( 'latin1', $room );
+			$rooms->{$plain_room}{max_power} = $power{$room};
+			warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
+			$rooms->{$plain_room}{powered} = $all{Devices}{Sw1}{$switch_name};
+			$rooms->{$plain_room}{current_power} = $rooms->{$plain_room}{powered} ? $rooms->{$plain_room}{max_power} : 0;
+			$current_total_power += $rooms->{$plain_room}{current_power};
+		}
+
+		# some scripts still rely on the first implemenation of the sensor cache which was basically autogenerted perl code
+		print Data::Dumper->Dump( [$rooms], ['rooms'] );
+		say '$creation_time = ' . time . ';';
+		my %outhash = ( creation_time => time );
+		for my $rep (
+			['Raumtemperatur',   'room'],
+			['Bodentemperatur',  'floor'],
+			['Absenktemperatur', 'set_low'],
+			['Solltemperatur',   'set'],
+			['Automatik',        'auto'],
+			['Solartemperatur',  'set_solar'],
+			['Status',           'state'],
+			)
+		{
+			replace_key( $rooms, @$rep );
+		}
+		$outhash{rooms}         = $rooms;
+		$outhash{current_power} = $current_total_power;
+		my $json_fh;
+
+		# newer ones use the json file.
+		open $json_fh, '>', "$json_file.tmp" or die "failed to open $json_file.tmp $@";
+		print $json_fh encode_json( \%outhash );
+		close $json_fh;
+		rename "$json_file.tmp", $json_file;
 	}
-	$outhash{rooms} = $rooms;
-	$outhash{current_power} = $current_total_power;
-	my $json_fh;
-	# newer ones use the json file.
-	open $json_fh, '>', "$json_file.tmp" or die "failed to open $json_file.tmp $@";
-	print $json_fh encode_json(\%outhash);
-	close $json_fh;
-	rename "$json_file.tmp", $json_file;
+	else {
+		warn $res->status_line, "\n";
+	}
 }
-else {
-    warn $res->status_line, "\n";
-}
-
 
 ### gather data on electrical power generation ###
 ### fronius inverter ###
 # http://www.fronius.com/en/photovoltaics/products/home/system-monitoring/open-interfaces/fronius-solar-api-json-
-my $solar = get_powers();
-$solar->{creation_time} = time;
-my $solar_json_fh;
-open $solar_json_fh, '>', "$solar_json_file.tmp" or die "failed to open $solar_json_file.tmp $@";
-print $solar_json_fh encode_json($solar);
-close $solar_json_fh;
-rename "$solar_json_file.tmp", $solar_json_file;
+if ( exists $host->{solar} ) {
+	my $solar_json_file = $config->{files}{solar_json_file};
+	my $solar = get_powers();
+	$solar->{creation_time} = time;
+	my $solar_json_fh;
+	open $solar_json_fh, '>', "$solar_json_file.tmp" or die "failed to open $solar_json_file.tmp $@";
+	print $solar_json_fh encode_json($solar);
+	close $solar_json_fh;
+	rename "$solar_json_file.tmp", $solar_json_file;
+}
 
 
 ### measure the power flow to and from the grid
 ### B-Control energy manager ###
 # https://www.tq-automation.com/content/download/10996/file/B-control_Energy_Manager_-_JSON-API.0101.pdf
-my $power_flow = get_power_flow();
-$power_flow->{creation_time} = time;
-my $power_flow_json_fh;
-open $power_flow_json_fh, '>', "$power_flow_json_file.tmp" or die "failed to open $power_flow_json_file.tmp $@";
-print $power_flow_json_fh encode_json($power_flow);
-close $power_flow_json_fh;
-rename "$power_flow_json_file.tmp", $power_flow_json_file;
+if ( exists $host->{grid} ) {
+	my $power_flow_json_file = $config->{files}{power_flow_json_file};
+	my $power_balance_file = $config->{files}{power_balance_file};
+	my $power_flow = get_power_flow();
+	$power_flow->{creation_time} = time;
+	my $power_flow_json_fh;
+	open $power_flow_json_fh, '>', "$power_flow_json_file.tmp" or die "failed to open $power_flow_json_file.tmp $@";
+	print $power_flow_json_fh encode_json($power_flow);
+	close $power_flow_json_fh;
+	rename "$power_flow_json_file.tmp", $power_flow_json_file;
 
 ### power flow history ###
 ### B-Control energy manager ###
-# https://www.tq-automation.com/content/download/10996/file/B-control_Energy_Manager_-_JSON-API.0101.pdf
-# record power flow for the last hour
-# this is used to get an idea of how much power is currently available and ignore spikes in either direction
-my $db = DBM::Deep->new(
-	file => $power_balance_file,
-	type => DBM::Deep->TYPE_ARRAY
-);
-my $power = $power_flow->{'1-0:2.4.0*255'} || $power_flow->{'1-0:1.4.0*255'} * -1;
-$db->lock_exclusive();
-push @$db, { time => time, power => $power };
-while ( $db->[0]{time} < time - 3600 ) {
-	shift @$db;
+	# https://www.tq-automation.com/content/download/10996/file/B-control_Energy_Manager_-_JSON-API.0101.pdf
+	# record power flow for the last hour
+	# this is used to get an idea of how much power is currently available and ignore spikes in either direction
+	my $db = DBM::Deep->new(
+		file => $power_balance_file,
+		type => DBM::Deep->TYPE_ARRAY
+	);
+	my $power = $power_flow->{'1-0:2.4.0*255'} || $power_flow->{'1-0:1.4.0*255'} * -1;
+	$db->lock_exclusive();
+	push @$db, { time => time, power => $power };
+	while ( $db->[0]{time} < time - 3600 ) {
+		shift @$db;
+	}
+	$db->unlock();
 }
-$db->unlock();
  
 
 sub populate_tree {
