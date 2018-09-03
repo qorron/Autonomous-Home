@@ -77,7 +77,7 @@ if ( @datapoints > 8 ) {
 	$power_budget = median(@datapoints);
 }
 else {
-	warn "not enough data points for power budget calculation!";
+	exit "not enough data points for power budget calculation!";
 }
 
 say "We have $power_budget W of available solar power";
