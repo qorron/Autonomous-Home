@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-<script src="Chart.bundle.min.js"></script>
+<script src="Chart.bundle.min.js"></script><!-- get this here: https://github.com/chartjs/Chart.js/releases and put it in the same directory -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 <style type="text/css">
 form {
