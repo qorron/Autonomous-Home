@@ -25,6 +25,8 @@ $Data::Dumper::Sortkeys = 1;
 
 my $config = config->new();
 
+our $debug = $ARGV[0];
+
 our $translation;
 our $munin;
 our $host = $config->{host};
@@ -75,11 +77,11 @@ if ( exists $config->{host}{symcon} ) {
 			# 		subs => [],
 		);
 
-		#say join ' ', keys %{$stuff->{result}{objects}};
+		# say join ' ', keys %{$stuff->{result}{objects}};
 		for my $id ( keys %{ $stuff->{result}{objects} } ) {
 			if ( exists $stuff->{result}{objects}{$id}{parentID} ) {
 
-				#say "$id -> $stuff->{result}{objects}{$id}{parentID}";
+				# say "$id -> $stuff->{result}{objects}{$id}{parentID}";
 				if ( exists $subs{"ID$stuff->{result}{objects}{$id}{parentID}"} ) {
 					push @{ $subs{"ID$stuff->{result}{objects}{$id}{parentID}"} }, $id;
 				}
@@ -99,21 +101,23 @@ if ( exists $config->{host}{symcon} ) {
 		my $rooms               = {};    # = $all{"R\x{e4}ume"};
 		my $current_total_power = 0;
 
-		#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all{Devices}{Sw1}], ['all']);
-		for my $room ( keys %{ $all{"R\x{e4}ume"} } ) {
+		# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all{Devices}{Sw1}], ['all']);
+		for my $room ( grep {exists $all{$_}{Heizung}} keys %all) {
 
 			# fca
 			my $plain_room  = lc( unidecode($room) );
 			my $switch_name = $room;
 			$switch_name = $translation{$room} if exists $translation{$room};
-			$rooms->{$plain_room} = $all{"R\x{e4}ume"}{$room};
+			$rooms->{$plain_room} = $all{$room};
 			$rooms->{$plain_room}{name} = decode( 'latin1', $room );
 			$rooms->{$plain_room}{max_power} = $power{$room};
-			warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
-			$rooms->{$plain_room}{powered} = $all{Devices}{Sw1}{$switch_name};
+			# warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
+			$rooms->{$plain_room}{powered} = $all{$room}{HeatControlSwitch}{CurrentSwitch};
 			$rooms->{$plain_room}{current_power} = $rooms->{$plain_room}{powered} ? $rooms->{$plain_room}{max_power} : 0;
 			$current_total_power += $rooms->{$plain_room}{current_power};
 		}
+
+		compress_measurements($rooms);
 
 		# some scripts still rely on the first implemenation of the sensor cache which was basically autogenerted perl code
 		print Data::Dumper->Dump( [$rooms], ['rooms'] );
@@ -136,10 +140,12 @@ if ( exists $config->{host}{symcon} ) {
 		my $json_fh;
 
 		# newer ones use the json file.
-		open $json_fh, '>', "$json_file.tmp" or die "failed to open $json_file.tmp $@";
-		print $json_fh encode_json( \%outhash );
-		close $json_fh;
-		rename "$json_file.tmp", $json_file;
+		if (!$debug) {
+			open $json_fh, '>', "$json_file.tmp" or die "failed to open $json_file.tmp $@";
+			print $json_fh encode_json( \%outhash );
+			close $json_fh;
+			rename "$json_file.tmp", $json_file;
+		}
 	}
 	else {
 		warn $res->status_line, "\n";
@@ -154,10 +160,12 @@ if ( exists $host->{solar} ) {
 	my $solar = get_powers();
 	$solar->{creation_time} = time;
 	my $solar_json_fh;
-	open $solar_json_fh, '>', "$solar_json_file.tmp" or die "failed to open $solar_json_file.tmp $@";
-	print $solar_json_fh encode_json($solar);
-	close $solar_json_fh;
-	rename "$solar_json_file.tmp", $solar_json_file;
+	if (!$debug) {
+		open $solar_json_fh, '>', "$solar_json_file.tmp" or die "failed to open $solar_json_file.tmp $@";
+		print $solar_json_fh encode_json($solar);
+		close $solar_json_fh;
+		rename "$solar_json_file.tmp", $solar_json_file;
+	}
 }
 
 
@@ -170,10 +178,12 @@ if ( exists $host->{grid} ) {
 	my $power_flow = get_power_flow();
 	$power_flow->{creation_time} = time;
 	my $power_flow_json_fh;
-	open $power_flow_json_fh, '>', "$power_flow_json_file.tmp" or die "failed to open $power_flow_json_file.tmp $@";
-	print $power_flow_json_fh encode_json($power_flow);
-	close $power_flow_json_fh;
-	rename "$power_flow_json_file.tmp", $power_flow_json_file;
+	if (!$debug) {
+		open $power_flow_json_fh, '>', "$power_flow_json_file.tmp" or die "failed to open $power_flow_json_file.tmp $@";
+		print $power_flow_json_fh encode_json($power_flow);
+		close $power_flow_json_fh;
+		rename "$power_flow_json_file.tmp", $power_flow_json_file;
+	}
 
 ### power flow history ###
 ### B-Control energy manager ###
@@ -218,6 +228,19 @@ sub replace_key {
 	$hashref->{$replace} = delete $hashref->{$find} if exists $hashref->{$find};
 	for my $key (keys %$hashref) {
 		replace_key($hashref->{$key}, $find, $replace) if ref $hashref->{$key} eq 'HASH';
+	}
+}
+
+sub compress_measurements {
+	my ($hashref) = @_;
+	for my $key (keys %$hashref) {
+		if ( ref $hashref->{$key} eq 'HASH' ) {
+			if (exists( $hashref->{$key}{Temperatur} ) ) {
+				$hashref->{$key} = $hashref->{$key}{Temperatur};
+			} else {
+				compress_measurements($hashref->{$key});
+			}
+		}
 	}
 }
 
