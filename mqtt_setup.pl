@@ -14,7 +14,7 @@ use lib qw( . /usr/local/lib/home_automation/perl );
 use config;
 
 my $conf = config->new();
-my $mqtt = Net::MQTT::Simple->new('192.168.2.2');
+my $mqtt = Net::MQTT::Simple->new($conf->{host}{mqtt});
 
 # script to initialize (set OTA url, model, etc. and reboot),
 # configure (name, options, etc..) and update all known sonoff
@@ -28,7 +28,7 @@ my $critical = ERROR;
 $beta = 1;
 
 my @reset_options = qw( FullTopic Module GroupTopic GPIO NtpServer Password Password MqttClient MqttHost MqttPassword MqttPort MqttUser Prefix Topic );
-
+my $select_module;
 GetOptions(
 	"upgrade"       => \$upgrade,
 	"init"          => \$init,
@@ -38,6 +38,7 @@ GetOptions(
 	"version=s"     => \$version,
 	"dump-config=s" => \$dump_config,
 	"beta!"         => \$beta,
+	"module=s"      => \$select_module,
 );
 
 # common options like OTA url, mqtt host, logging and so on.
@@ -74,6 +75,7 @@ for my $name ( keys %$modules ) {
 
 MODULE: for my $name ( keys %$modules ) {
 
+	next if $select_module && $modules->{$name}{config}{Topic} ne $select_module;
 	next if $beta && !$modules->{$name}{beta};
 
 	chat(INFO, "\n  ##### Module: $name '$modules->{$name}{FriendlyName}' #####");
@@ -217,7 +219,8 @@ sub ensure_option {
 		}
 	}
 	else {
-		chat( ACTION, "Setting option $option to $value. $generic_name " );
+		my $val_text = (ref $value eq 'ARRAY' ? 'Multivalue: '.join ', ', map {"'$_'"} @$value: $value);
+		chat( ACTION, "Setting option $option to $val_text. " );
 		set_option( $fallback, $option, $value );
 	}
 }
@@ -228,12 +231,18 @@ sub query_option {
 }
 
 sub set_option {
-	my ( $fallback, $option, $value ) = @_;
+	my ( $fallback, $option, $values ) = @_;
 
 	my $result;
 	my $command_topic = "cmnd/$fallback/$option";
 	my $result_topic = "stat/$fallback/RESULT";
-	return send_command($command_topic, $value, $result_topic);
+	$values = [$values] unless 'ARRAY' eq ref $values;
+	my %return;
+	for my $value (@$values) {
+		my $return = send_command($command_topic, $value, $result_topic);
+		%return = (%return, %$return);
+	}
+	return \%return;
 }
 
 sub send_command {
