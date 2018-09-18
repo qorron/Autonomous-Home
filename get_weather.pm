@@ -13,10 +13,12 @@ use Data::Dumper;
 
 use Storable;
 use List::Util qw(max);
-use Weather::YR;
+use Weather::YR; # use this for forecast
 
 use lib qw( . /usr/local/lib/home_automation/perl );
 use config;
+
+our $kelvin = -273.15;
 
 sub new {
 	my $that      = shift;

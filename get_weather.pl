@@ -11,8 +11,22 @@ use Data::Dumper;
 
 use lib qw( . /usr/local/lib/home_automation/perl );
 use get_weather;
+use get_openweather;
 
 my $weather = get_weather->new( max_age => 1800 ); # seconds
+
+my $ow = get_openweather::get_open_weather_map();
+
+say join ', ', $ow->station, $ow->name, $ow->country;
+say 'temp: '.$ow->temp_c;
+say 'cond: '.$ow->conditions_terse;
+say ''.$ow->conditions_verbose;
+say 'hum: '.$ow->humidity;
+say 'pressure: '.$ow->pressure;
+say 'wind: '.$ow->wind_speed_kph;
+say 'gust: '.$ow->wind_gust_kph;
+say 'cloud%: '.$ow->cloud_coverage;
+say $ow->dt;
 
 my $day = $weather->{cache}{yr_today};
 say ref $day;
