@@ -112,7 +112,9 @@ if ($mode eq 'powers') {
 	$info = '';
 	#$lower = 0;
 	#$upper = 40;
-	for my $measurement (qw(Raumtemperatur Bodentemperatur) ) {
+	my @measurements = qw(Raumtemperatur Bodentemperatur floor_target) ;
+	for my $measurement ( @measurements ) {
+		next unless defined $rooms->{$room}{$measurement};
 		push @values, "${room}_$measurement.value $rooms->{$room}{$measurement}";
 		push @config, "${room}_$measurement.label $rooms->{$room}{name} $measurement";
 	}
@@ -120,8 +122,7 @@ if ($mode eq 'powers') {
 	push @config, "${room}_powered.label $rooms->{$room}{name} Powered";
 	push @config, "${room}_powered.info 0 when off, 10 when on.";
 	push @config, "${room}_powered.draw AREA";
-		#push @config, "$room.draw AREASTACK";
-	$values = "${room}_Raumtemperatur ${room}_Bodentemperatur ${room}_powered";
+	$values = join ' ', map {"${room}_$_"} @measurements, "powered";
 }
 
 if ( $ARGV[0] && $ARGV[0] eq 'config' ) {

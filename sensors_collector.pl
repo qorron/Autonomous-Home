@@ -94,7 +94,7 @@ if ( exists $config->{host}{symcon} ) {
 		# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%subs], ['subs']);
 		populate_tree( $id0, \%all );
 
-		#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%all], ['all']);
+		# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\%all], ['all']);
 
 		# until here we were generic
 
@@ -102,7 +102,7 @@ if ( exists $config->{host}{symcon} ) {
 		my $current_total_power = 0;
 
 		# warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$all{Devices}{Sw1}], ['all']);
-		for my $room ( grep {exists $all{$_}{Heizung}} keys %all) {
+		for my $room ( grep {exists $all{$_}{Raumtemperatur}} keys %all) {
 
 			# fca
 			my $plain_room  = lc( unidecode($room) );
@@ -113,6 +113,7 @@ if ( exists $config->{host}{symcon} ) {
 			$rooms->{$plain_room}{max_power} = $power{$room};
 			# warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
 			$rooms->{$plain_room}{powered} = $all{$room}{HeatControlSwitch}{CurrentSwitch};
+			$rooms->{$plain_room}{floor_target} = $all{$room}{Heizung}{'Floor Target Temperature'} // $all{$room}{'HeatControl PI'}{'Floor Target Temperature'};
 			$rooms->{$plain_room}{current_power} = $rooms->{$plain_room}{powered} ? $rooms->{$plain_room}{max_power} : 0;
 			$current_total_power += $rooms->{$plain_room}{current_power};
 		}
