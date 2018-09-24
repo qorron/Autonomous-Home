@@ -9,7 +9,7 @@ CONFIG_PATH='/etc/home_automation/'
 # cp inverter.pl ${INSTALL_PATH}
 # cp heat_collector.pl ${INSTALL_PATH}
 cp heat_.pl ${INSTALL_PATH}heat_
-# cp mqtt_.pl ${INSTALL_PATH}
+cp mqtt_.pl ${INSTALL_PATH}
 # cp AP_names.pl ${INSTALL_PATH}
 # cp get_pressure.pl ${INSTALL_PATH}
 cp shutter.pl ${INSTALL_PATH}
@@ -21,8 +21,9 @@ cp get_weather.pl ${INSTALL_PATH}
 cp sensors_collector.pl ${INSTALL_PATH}
 
 
-cp qmel.pm ${INSTALL_PATH}perl/
-cp get_weather.pm ${INSTALL_PATH}perl/
-cp config.pm ${INSTALL_PATH}perl/
+cp lib/qmel.pm ${INSTALL_PATH}perl/
+cp lib/get_weather.pm ${INSTALL_PATH}perl/
+cp lib/get_openweather.pm ${INSTALL_PATH}perl/
+cp lib/config.pm ${INSTALL_PATH}perl/
 
 cp config/* ${CONFIG_PATH}
