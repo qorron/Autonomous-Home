@@ -10,7 +10,7 @@ use enum qw(ERROR WARNING ACTION INFO DEBUG);
 use YAML::XS;
 use Time::Out qw(timeout) ;
 
-use lib qw( . /usr/local/lib/home_automation/perl );
+use lib qw( lib /usr/local/lib/home_automation/perl );
 use config;
 
 my $conf = config->new();

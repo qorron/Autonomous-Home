@@ -18,7 +18,7 @@ use DBM::Deep;
 use LWP::UserAgent;
 use Text::Unidecode;
 
-use lib qw( . /usr/local/lib/home_automation/perl );
+use lib qw( lib /usr/local/lib/home_automation/perl );
 use config;
 
 $Data::Dumper::Sortkeys = 1;

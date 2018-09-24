@@ -25,7 +25,7 @@ use File::Slurp qw(slurp);
 use POSIX;
 use List::Util qw(sum);
 
-use lib qw( . /usr/local/lib/home_automation/perl );
+use lib qw( lib /usr/local/lib/home_automation/perl );
 use qmel;
 use get_weather;
 use config;

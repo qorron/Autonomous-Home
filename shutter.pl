@@ -27,7 +27,7 @@ use Astro::Sunrise qw( :constants sunrise sun_rise sun_set);
 #use DateTime::TimeZone;
 use DateTime;
 
-use lib qw( . /usr/local/lib/home_automation/perl );
+use lib qw( lib /usr/local/lib/home_automation/perl );
 use get_weather;
 use config;
 
