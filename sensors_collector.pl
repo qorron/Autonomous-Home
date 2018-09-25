@@ -112,7 +112,7 @@ if ( exists $config->{host}{symcon} ) {
 			$rooms->{$plain_room}{name} = decode( 'latin1', $room );
 			$rooms->{$plain_room}{max_power} = $power{$room};
 			# warn "$room $switch_name" unless exists $all{Devices}{Sw1}{$switch_name};
-			$rooms->{$plain_room}{powered} = $all{$room}{HeatControlSwitch}{CurrentSwitch};
+			$rooms->{$plain_room}{powered} = $all{$room}{HeatControlSwitch}{CurrentSwitch} // $all{$room}{'HeatControl PI'}{'Current Switch State'} // $all{$room}{'Heizung'}{'Current Switch State'};
 			$rooms->{$plain_room}{floor_target} = $all{$room}{Heizung}{'Floor Target Temperature'} // $all{$room}{'HeatControl PI'}{'Floor Target Temperature'};
 			$rooms->{$plain_room}{current_power} = $rooms->{$plain_room}{powered} ? $rooms->{$plain_room}{max_power} : 0;
 			$current_total_power += $rooms->{$plain_room}{current_power};
