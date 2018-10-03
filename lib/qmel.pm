@@ -150,6 +150,43 @@ sub set_ac {
 	return $self->mel_post('Device/SetAta', $state);
 }
 
+sub ensure_ac {
+	my ( $self, $name, $options ) = @_;
+	my $result = $self->set_ac( $name, $options );
+	$self->wait_for_next_communication($result);
+	my $done;
+	my $d;
+	do {
+		my $deviations = 0;
+		$d = $self->get_device_state($name);
+		if ( $d->{HasPendingCommand} ) {
+
+			# command did not go through yet, we wait until NextCommunication and check again
+			wait_for_next_communication($d);
+		}
+		else {
+			for my $param ( keys %$options ) {
+				if ( $options->{$param} != $d->{$param} ) {
+					$deviations++;
+				}
+			}
+			if ($deviations) {
+				$d = $self->set_ac( $name, $options );
+				wait_for_next_communication($d);
+			}
+			else {
+				$done = 1;
+			}
+		}
+	} until ($done);
+}
+
+sub wait_for_next_communication {
+	my ($self, $result) = @_;
+	my $next_check = str2time( $result->{NextCommunication}, 'UTC' );
+	my $wait       = 5 + $next_check - time;
+	sleep $wait unless $wait <= 0;
+}
 
 
 sub print_config {

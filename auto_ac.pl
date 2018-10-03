@@ -26,11 +26,21 @@ use POSIX;
 use List::Util qw(sum);
 
 use lib qw( lib /usr/local/lib/home_automation/perl );
+use Net::Pushover;
 use qmel;
 use get_weather;
 use config;
 
+my $cron_mode = $ARGV[0];
+my @title = ('AC');
+my @facts;
+
 my $config = config->new();
+
+my $push = Net::Pushover->new(
+  token => $config->{keys}{pushover_app},
+  user  => $config->{keys}{pushover_user},
+);
 
 my $weather = get_weather->new( max_age => ( 2 * 3600 ) );    # seconds
 
@@ -89,6 +99,11 @@ power: $power_budget
 overshoot: $overshoot
 STATUS
 
+push @facts, "Power: $power_budget W",
+	"max temp: $weather->{cache}{max_temp_today} ($config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})",
+	"overshoot: $overshoot";
+
+
 # my $now = $yr->location_forecast->now;
 # say "It's " . $now->temperature->celsius . "°C outside.";
 # say "Weather status: " . $now->precipitation->symbol->text;
@@ -139,13 +154,16 @@ if ( $power_budget > $high_surplus) {
 	$demand_on_threshold = 0.5;
 	$demand_off_threshold = -2; # effectively, no auto off
 	$high_power_available = 1;
+	push @facts, 'high_power';
 }
 if ( $power_budget < $remove_surplus && @on ) {
 
 	# power running low, remove device with the lowest demand_off
 	my $device = shift @on;
 	$device->{power} = 0;
+	$device->{reason} = 'low power';
 	push @actions, $device;
+	
 }
 elsif ( $power_budget > $add_surplus && @off ) {
 
@@ -155,6 +173,7 @@ elsif ( $power_budget > $add_surplus && @off ) {
 	if ( ( $high_power_available && $hot_day ) || $off[0]{demand_on} > $demand_on_threshold ) {
 		my $device = shift @off;
 		$device->{power} = 1;
+		$device->{reason} = 'high power';
 		push @actions, $device;
 	}
 
@@ -164,6 +183,7 @@ elsif ( $power_budget > $add_surplus && @off ) {
 		# turn off ac that has overshot its target.
 		my $device = shift @on;
 		$device->{power} = 0;
+		$device->{reason} = 'too cool';
 		push @actions, $device;
 	}
 }
@@ -173,33 +193,52 @@ elsif ( @on && @off ) {    # between limits, switch if appropiate
 	elsif ( $on[0]{demand_off} < $off[0]{demand_on} && $off[0]{demand_on} > 1) {
 		my $device = $on[0];
 		$device->{power} = 0;
+		$device->{reason} = 'swap';
 		push @actions, $device;
 		$device = $off[0];
 		$device->{power} = 1;
+		$device->{reason} = 'swap';
 		push @actions, $device;
 	}
 	elsif ( $on[0]{demand_off} < $demand_off_threshold ) {
 		my $device = $on[0];
 		$device->{power} = 0;
+		$device->{reason} = 'too cool';
 		push @actions, $device;
 	}
 }
 
-if (@actions) {
+if ( @actions && ! $cron_mode ) {
 	warn $status;
 	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@off],     ['off'] );
 	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@on],      ['on'] );
 	warn __PACKAGE__ . ':' . __LINE__ . $" . Data::Dumper->Dump( [\@actions], ['actions'] );
 }
 
+
+
 for my $action (@actions) {
-	warn "$action->{name}: Power => $action->{power}, SetTemperature => " . ( $rooms{ $action->{name} }{target} - $overshoot );
+	push @title, "$action->{name}(" . ( $action->{power} ? 'on' : 'off' ).')';
+	push @facts, "$action->{name} ($action->{reason}): " . ( $action->{power} ? 'on' : 'off' );
+	warn "$action->{name}: Power => $action->{power}, SetTemperature => " . ( $rooms{ $action->{name} }{target} - $overshoot ) unless $cron_mode;
 	$d = $qmel->set_ac( $action->{name},
 		{ Power => $action->{power}, SetTemperature => ( $rooms{ $action->{name} }{target} - $overshoot ) } );
 
 	#warn __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$d], ['d']);
 }
 
+my $text = join ', ', @facts;
+my $title = join ', ', @title;
+say $title;
+say $text;
+
+ 
+# send a notification
+$push->message( 
+  title => $title, 
+  text => $text,
+	priority => 0,
+) if $cron_mode && @actions;
 exit;
 
 sub median {
