@@ -93,6 +93,7 @@ form {
 				"room_jump" => 0, 
 				"room_target" => 20, 
 				"room_target_high" => 20, 
+				"room_target_solar" => 20, 
 				"floor_max" => 25,
 				"delay" => 5,
 				"section2" => "Room Params",
@@ -165,9 +166,10 @@ form {
 			}
 
 		?> : <input type="button" value="flat" onclick="javascript: this.form.outside_high.value = this.form.outside_low.value; update_graph(this.form);"> <?php
-		?><input type="button" value="hold" onclick="javascript: this.form.room_start.value = this.form.room_target.value; this.form.floor_start.value = this.form.room_target.value; update_graph(this.form);"> : <?php
-		?>Room: <input type="button" value="step" onclick="javascript: if (this.form.room_target.value == this.form.room_target_high.value) {this.form.room_target_high.value = parseFloat(this.form.room_target.value) + 1.0; this.form.room_target.value = this.form.room_target.value - 1; update_graph(this.form); } "> <?php
-		?><input type="button" value="flat" onclick="javascript: if (this.form.room_target.value != this.form.room_target_high.value) {this.form.room_target.value = parseFloat(this.form.room_target.value) + 1.0; this.form.room_target_high.value = this.form.room_target.value; update_graph(this.form); } "><br><?php
+		?><input type="button" value="hold" onclick="javascript: this.form.room_start.value = this.form.room_target.value; this.form.floor_start.value = this.form.room_target.value; this.form.room_target_solar.value = this.form.room_target.value; update_graph(this.form);"> : <?php
+		?>Room: <input type="button" value="step" onclick="javascript: if (this.form.room_target.value == this.form.room_target_high.value) {this.form.room_target_high.value = parseFloat(this.form.room_target.value) + 1.0; this.form.room_target.value = this.form.room_target.value - 1; this.form.room_target_solar.value = this.form.room_target.value; update_graph(this.form); } "> <?php
+		?><input type="button" value="flat" onclick="javascript: if (this.form.room_target.value != this.form.room_target_high.value) {this.form.room_target.value = parseFloat(this.form.room_target.value) + 1.0; this.form.room_target_high.value = this.form.room_target.value; update_graph(this.form); } "> <?php
+		?><input type="button" value="solar" onclick="javascript: if (this.form.room_target.value == this.form.room_target_solar.value) {this.form.room_target_solar.value = parseFloat(this.form.room_target.value) + 3.0; update_graph(this.form); } "><br><?php
 
 			foreach ($fields as $name => $value) {
 				if (preg_match('/^section/', $name)) {

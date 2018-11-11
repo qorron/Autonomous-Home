@@ -16,6 +16,7 @@ $delay = $_GET['delay'];
 $floor_max = $_GET['floor_max'];
 $room_target = $_GET['room_target'];
 $room_target_high = $_GET['room_target_high'];
+$room_target_solar = $_GET['room_target_solar'];
 $r1_threshold = $_GET['r1_threshold'];
 $r2_threshold = $_GET['r2_threshold'];
 $r2_p = $_GET['r2_p'];
@@ -58,7 +59,7 @@ $room_target_controller = 0; # target temperature the controller has to reach. t
 
 for( $i = 0; $i<$steps; $i++ ) {
 
-	$room_target_controller = ( is_high($i) ? $room_target_high : $room_target );
+	$room_target_controller = ( is_solar($i) ? $room_target_solar : ( is_high($i) ? $room_target_high : $room_target) );
 
 	$outside = $outside_low + ((1+cos(2*M_PI*$i/$day - M_PI*1.166)) * $outside_diff/2);
 	$outside_controller = ($outside_mock == "" ? $outside : $outside_mock );
@@ -250,8 +251,19 @@ function is_high($i) {
 	$i %= 1440;
 	$i = intval($i/60);
 	return ($i >= 7 && $i < 10) || ($i >= 17 && $i < 23);
-
 }
 
+function is_solar($i) {
+	$day_min = $i%1440;
+	$day_h = intval($day_min/60);
+	if ($i < 1440) { # let day 1 be a shady day with a lot of noise
+		return ($day_h >= 11 && $day_h < 16 && ($i%6 > 2));
+	} else { # day 2 shall be a sunny day with an uninterrupted period of solar power
+		return ($day_h >= 11 && $day_h < 16);
+	}
+	$i %= 1440;
+	$i = intval($i/60);
+	return ($i >= 7 && $i < 10) || ($i >= 17 && $i < 23);
+}
 
 ?>
