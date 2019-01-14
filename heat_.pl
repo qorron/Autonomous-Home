@@ -107,6 +107,15 @@ if ($mode eq 'powers') {
 		push @values, "$room_key.value $rooms->{$room_key}{Bodentemperatur}";
 		push @config, "$room_key.label $rooms->{$room_key}{name}";
 	}
+} elsif ($mode eq 'r2ii') {
+	$title = 'I-Part';
+	$info = '';
+	#$lower = 10;
+	#$upper = 40;
+	for my $room_key (@rooms) {
+		push @values, "$room_key.value $rooms->{$room_key}{Heizung}{r2i_i}";
+		push @config, "$room_key.label $rooms->{$room_key}{name}";
+	}
 } elsif ($mode eq 'room') {
 	$title = "Temperature in $rooms->{$room}{name}";
 	$info = '';
