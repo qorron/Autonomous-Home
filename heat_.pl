@@ -35,7 +35,7 @@ if ($ARGV[0] && $ARGV[0] eq 'autoconf') {
 }
 
 my ( $mode, $room );
-if ( $0 =~ /heat_([[:alpha:]]+)(?:_(\w+))?$/ ) {
+if ( $0 =~ /heat_([[:alnum:]]+)(?:_(\w+))?$/ ) {
 	( $mode, $room ) = ( $1, $2 );
 }
 
