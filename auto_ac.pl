@@ -60,7 +60,7 @@ my %rooms = %{ $config->{ac}{rooms} };
 
 my $qmel = qmel->new( rooms => \%rooms); 
 
-my $heater = decode_json( slurp '/tmp/heat.json' );
+my $heater = decode_json( slurp $config->{files}{heater_json_file} );
 
 my $hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{hot_day_temp};
 my $super_hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{super_hot_day_temp};
