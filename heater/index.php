@@ -128,6 +128,14 @@ form {
 					"room_outside_t" => 0.13, 
 					"floor_max" => 30,
 				),
+				"wc" => array(
+					"floor_room_t" => 0.2, 
+					"floor_outside_t" => 0.14, 
+					"floor_increment" => 0.4, 
+					"room_floor_t" => 0.161,
+					"room_outside_t" => 0.13, 
+					"floor_max" => 30,
+				),
 				"livingroom" => array(
 					"floor_room_t" => 0.35, 
 					"floor_outside_t" => 0.16, 
