@@ -279,11 +279,21 @@ sub melcloud_request {
 # 	warn $req->as_string;
 	# Fire the cannon now !
 	my $res = $ua->request($req);
+	my $retries = 0;
+	my $max_retries = 10;
+	until ($res && $res->is_success) {
+		last if $retries > $max_retries;
+		sleep 1; # don't hammer it too hard
+		$res = $ua->request($req);
+		$retries++;
+	}
 	if ( $res->is_success ) {
+		warn "success after $retries retries" if $retries > 0;
 		return decode_json( $res->content );
 	}
 	else {
 		warn $res->status_line;
+		die "failed after $retries retries";
 	}
 
 }
