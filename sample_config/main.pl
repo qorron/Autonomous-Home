@@ -167,6 +167,10 @@ $config{shutter}{offsets} = {
 
 
 
+$config{mqtt}{params} = {
+	min_rssi           => 65,
+	min_rssi_hit_limit => 5,
+};
 
 $config{mqtt}{common} = {
 # to safely quote your passwords please refer to:
@@ -185,6 +189,9 @@ $config{mqtt}{common} = {
 	seriallog   => '0',    # gets in the way of submodule communication
 	SetOption26 => 0,      # 0 (default) Keep using POWER without postfix for single power devices
 	                       # 1 Add postfix to all POWER messages
+	Latitude    => $config{latitude},
+	Longitude   => $config{longitude},
+	TelePeriod  => 300, # 300 is the default, the value here is also used to determine staleness.
 };
 # Modules: (at the time of writing)
 #  1 (Sonoff Basic)     21 (Sonoff SC)
