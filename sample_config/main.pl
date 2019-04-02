@@ -53,6 +53,9 @@ $config{ac} = {
 	# ACs are turned on even if they don't have any demand (yet)
 	high_surplus => 2400,    # Watts
 
+	# do not engage ACs below this temperature
+	min_day_temp => 20,
+
 	# turn on ACs prematurely to counter stronger heat buildup in the roof
 	# if the maximum temperature forecast is above this. (only if high_surplus criteria is met)
 	hot_day_temp => 25,      # Centigrade

@@ -61,7 +61,7 @@ my %rooms = %{ $config->{ac}{rooms} };
 my $qmel = qmel->new( rooms => \%rooms); 
 
 my $heater = decode_json( slurp $config->{files}{heater_json_file} );
-
+my $winter = $weather->{cache}{max_temp_today} <= $config->{ac}{min_day_temp}; # in spring, the sun is strong and can heat up the rooms but it still gets cold at night.
 my $hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{hot_day_temp};
 my $super_hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{super_hot_day_temp};
 
@@ -94,13 +94,13 @@ else {
 say "We have $power_budget W of available solar power";
 
 my $status =<<STATUS;
-max temp: $weather->{cache}{max_temp_today} ($config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})
+max temp: $weather->{cache}{max_temp_today} ($config->{ac}{min_day_temp} / $config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})
 power: $power_budget
 overshoot: $overshoot
 STATUS
 
 push @facts, "Power: $power_budget W",
-	"max temp: $weather->{cache}{max_temp_today} ($config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})",
+	"max temp: $weather->{cache}{max_temp_today} ($config->{ac}{min_day_temp} / $config->{ac}{hot_day_temp} / $config->{ac}{super_hot_day_temp})",
 	"overshoot: $overshoot";
 
 
@@ -170,7 +170,7 @@ elsif ( $power_budget > $add_surplus && @off ) {
 	# we've got the power
 	# power on device with the highest demand_on
 	# but only if the demand is high enough, we don't want AC in the winter
-	if ( ( $high_power_available && $hot_day ) || $off[0]{demand_on} > $demand_on_threshold ) {
+	if ( ( $high_power_available && $hot_day ) || ( !$winter && $off[0]{demand_on} > $demand_on_threshold ) ) {
 		my $device = shift @off;
 		$device->{power} = 1;
 		$device->{reason} = 'high power';
