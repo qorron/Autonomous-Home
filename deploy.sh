@@ -13,12 +13,13 @@ cp mqtt_.pl ${INSTALL_PATH}
 # cp AP_names.pl ${INSTALL_PATH}
 # cp get_pressure.pl ${INSTALL_PATH}
 cp shutter.pl ${INSTALL_PATH}
-# cp strom.pl ${INSTALL_PATH}
-# cp solar.pl ${INSTALL_PATH}
+cp strom.pl ${INSTALL_PATH}
+cp solar.pl ${INSTALL_PATH}
 # cp prometheus.psgi ${INSTALL_PATH}
 cp auto_ac.pl ${INSTALL_PATH}
 cp get_weather.pl ${INSTALL_PATH}
 cp sensors_collector.pl ${INSTALL_PATH}
+cp mqtt_autoreset.pl ${INSTALL_PATH}
 
 
 cp lib/qmel.pm ${INSTALL_PATH}perl/
