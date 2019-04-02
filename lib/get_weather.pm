@@ -12,7 +12,7 @@ use feature ':5.20';
 use Data::Dumper;
 
 use Storable;
-use List::Util qw(max);
+use List::Util qw(max min);
 use Weather::YR; # use this for forecast
 
 use lib qw( . /usr/local/lib/home_automation/perl );
@@ -72,6 +72,10 @@ sub update_cache {
 	$cache->{max_temp_today} =
 		max map { $cache->{yr_today}->datapoints->[$_]->temperature->celsius } ( 0 .. $#{ $cache->{yr_today}->datapoints } );
 	$cache->{max_temp_tomorrow} = max map { $cache->{yr_tomorrow}->datapoints->[$_]->temperature->celsius }
+		( 0 .. $#{ $cache->{yr_tomorrow}->datapoints } );
+	$cache->{min_temp_today} =
+		min map { $cache->{yr_today}->datapoints->[$_]->temperature->celsius } ( 0 .. $#{ $cache->{yr_today}->datapoints } );
+	$cache->{min_temp_tomorrow} = min map { $cache->{yr_tomorrow}->datapoints->[$_]->temperature->celsius }
 		( 0 .. $#{ $cache->{yr_tomorrow}->datapoints } );
 
 	store $cache, $self->{config}{weather_cache_file};

@@ -61,7 +61,10 @@ my %rooms = %{ $config->{ac}{rooms} };
 my $qmel = qmel->new( rooms => \%rooms); 
 
 my $heater = decode_json( slurp $config->{files}{heater_json_file} );
-my $winter = $weather->{cache}{max_temp_today} <= $config->{ac}{min_day_temp}; # in spring, the sun is strong and can heat up the rooms but it still gets cold at night.
+my $winter =
+	   $weather->{cache}{max_temp_today} <= $config->{ac}{min_day_temp}
+	|| $weather->{cache}{min_temp_today} <=
+	$config->{ac}{min_night_temp};    # in spring, the sun is strong and can heat up the rooms but it still gets cold at night.
 my $hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{hot_day_temp};
 my $super_hot_day = $weather->{cache}{max_temp_today} > $config->{ac}{super_hot_day_temp};
 

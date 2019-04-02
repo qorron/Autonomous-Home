@@ -55,6 +55,7 @@ $config{ac} = {
 
 	# do not engage ACs below this temperature
 	min_day_temp => 20,
+	min_night_temp => 12,
 
 	# turn on ACs prematurely to counter stronger heat buildup in the roof
 	# if the maximum temperature forecast is above this. (only if high_surplus criteria is met)

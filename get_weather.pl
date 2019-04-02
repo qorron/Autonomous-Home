@@ -39,4 +39,5 @@ for my $day ( $weather->{cache}{yr_today}, $weather->{cache}{yr_tomorrow} ) {
 }
 say "max temp today (remaining day): $weather->{cache}{max_temp_today}";
 say "max temp tomorrow: $weather->{cache}{max_temp_tomorrow}";
-
+say "min temp today (remaining day): $weather->{cache}{min_temp_today}";
+say "min temp tomorrow: $weather->{cache}{min_temp_tomorrow}";
