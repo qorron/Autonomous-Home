@@ -9,7 +9,7 @@ use warnings;
 use 5.020;
 use Data::Dumper;
 
-use lib qw( lib. /usr/local/lib/home_automation/perl );
+use lib qw( lib . /usr/local/lib/home_automation/perl );
 use get_weather;
 use get_openweather;
 
