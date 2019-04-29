@@ -7,10 +7,10 @@ use Data::Dumper;
 # this subscribes to the STATE telemetry topics on the mqtt and resets devices that have a low RSSI over a period of time
 
 use JSON;
-use Net::MQTT::Simple;
 use Date::Parse;
 
 use lib qw( lib /usr/local/lib/home_automation/perl );
+use Net::MQTT::Simple;
 use config;
 
  

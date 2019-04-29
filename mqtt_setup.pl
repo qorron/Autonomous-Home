@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use 5.020;
 use Data::Dumper;
-use Net::MQTT::Simple;
 use Getopt::Long;
 use JSON;
 use enum qw(ERROR WARNING ACTION INFO DEBUG);
@@ -11,6 +10,7 @@ use YAML::XS;
 use Time::Out qw(timeout) ;
 
 use lib qw( lib /usr/local/lib/home_automation/perl );
+use Net::MQTT::Simple;
 use config;
 
 my $conf = config->new();
