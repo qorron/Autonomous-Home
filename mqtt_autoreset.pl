@@ -18,13 +18,18 @@ our $conf = config->new();
 my $mqtt = Net::MQTT::Simple->new($conf->{host}{mqtt});
 
 our %low_rssi_hits;
-
-$mqtt->run(
+$mqtt->subscribe(
     "tasmota/+/tele/STATE" => sub {
 		my ($full_topic, $message, $retain) = @_;
 		parse_state($full_topic, $message, $retain, \&restart_on_low_rssi);
     },
 );
+
+# does not work because actual connect happens with run.
+# considering to do a simple publish here to have the socket populated
+# die "not connected" unless $mqtt->{socket} and $mqtt->{socket}->connected;
+
+$mqtt->run();
 
 
 sub restart_on_low_rssi {
