@@ -18,11 +18,12 @@ my @sensors = qw( AM2301 DS18B20 );
 my @sensor_measurements = qw(Temperature Humidity);
 
 my $conf = config->new();
-my $mqtt = Net::MQTT::Simple->new($conf->{host}{mqtt});
+our $mqtt = Net::MQTT::Simple->new($conf->{host}{mqtt});
 
 my $max_age = 360;
 
-my $verbose = ERROR;
+my $verbose = WARNING;
+my $critical = ERROR;
 my %telemetry;
 
 my ( $mode, $topic );
@@ -306,59 +307,6 @@ sub read_sensor_data {
 
 exit;
 
-# argument handling goes here..
-my ($upgrade, $init, $config, $version);
-my $critical = ERROR;
-
-GetOptions(
-	"upgrade" => \$upgrade,
-	"init"    => \$init,
-	"config"  => \$config,
-	"verbose=i" => \$verbose,
-	"crititical=i" => \$critical,
-	"version=s" => \$version,
-);
-# yadda yadda yadda...
-
-# common options like OTA url, mqtt host logging and so on.
-my $common = {
-	FullTopic => "tasmota/%topic%/%prefix%/",
-	OtaUrl  => 'http://192.168.2.2:80/api/arduino/sonoff.ino.bin',
-	LogHost => '192.168.2.2',
-	LogPort => '514',
-	SysLog  => '2',                                                  # 0 off, 1 error, 2 info, 3 debug, 4 all
-};
-
-
-# TODO move the module specific stuff in a seperate file
-
-# list of fallback names
-# we need this exactly why?
-my @names = qw();
-
-# hash of fallback names with a list of init commands
-# perhaps add a subhash for options
-# Modules:
-#  1 (Sonoff Basic)     21 (Sonoff SC)
-#  2 (Sonoff RF)        22 (Sonoff BN-SZ)
-#  3 (Sonoff SV)        23 (Sonoff 4CH Pro)
-#  4 (Sonoff TH)        24 (Huafan SS)
-#  5 (Sonoff Dual)      25 (Sonoff Bridge)
-#  6 (Sonoff Pow)       26 (Sonoff B1)
-#  7 (Sonoff 4CH)       27 (AiLight)
-#  8 (S20 Socket)       28 (Sonoff T1 1CH)
-#  9 (Slampher)         29 (Sonoff T1 2CH)
-# 10 (Sonoff Touch)     30 (Sonoff T1 3CH)
-# 11 (Sonoff LED)       31 (Supla Espablo)
-# 12 (1 Channel)
-# 13 (4 Channel)
-# 14 (Motor C/AC)
-# 15 (ElectroDragon)
-# 16 (EXS Relay)
-# 17 (WiOn)
-# 18 (WeMos D1 mini)
-# 19 (Sonoff Dev)
-# 20 (H801)
 
 sub get_option {
 	my ( $topic, $option ) = @_;
@@ -372,21 +320,22 @@ sub send_command {
 	my ($command_topic, $message, $result_topic) = @_;
 	chat(DEBUG, "Subscribing to: '$result_topic'");
 	our $result = '';
-	$mqtt->subscribe(
+	my $mqtt2 = Net::MQTT::Simple->new($conf->{host}{mqtt});
+	$mqtt2->subscribe(
 		$result_topic => sub {
-			chat(DEBUG, join( '=>', @_));
+			chat(DEBUG, 'got: '.join( '=>', @_));
 			$result = $_[1];
-			$mqtt->{stop_loop} = 1;
+			$mqtt2->{stop_loop} = 1;
 		},
 	);
 
 	chat(DEBUG, "Publishing: '$command_topic' => '$message'");
-	$mqtt->publish( $command_topic => $message );
+	$mqtt2->publish( $command_topic => $message );
+	chat(DEBUG, "Published");
     eval {
         local $SIG{ALRM} = sub { die "alarm\n" };    # NB: \n required
         alarm 1;
-
-		$mqtt->run();
+		$mqtt2->run();
 		alarm 0;
     };
     if ($@) {
@@ -396,11 +345,10 @@ sub send_command {
         die $err unless $err eq "alarm\n";    # propagate unexpected errors
     }
     else {
-
         # didn't
     }
 	chat(DEBUG, "Unsubscribing from: '$result_topic'");
-	$mqtt->unsubscribe($result_topic);
+	$mqtt2->unsubscribe($result_topic);
 	return parse_response( $result, WARNING);
 }
 
