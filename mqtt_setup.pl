@@ -249,31 +249,32 @@ sub send_command {
 	my ($command_topic, $message, $result_topic) = @_;
 	chat(DEBUG, "Subscribing to: '$result_topic'");
 	our $result = '';
-	$mqtt->subscribe(
+	my $mqtt2 = Net::MQTT::Simple->new($conf->{host}{mqtt});
+	$mqtt2->subscribe(
 		$result_topic => sub {
 			chat(DEBUG, join( '=>', @_));
 			$result = $_[1];
-			$mqtt->{stop_loop} = 1;
+			$mqtt2->{stop_loop} = 1;
 		},
 	);
 
 	chat(DEBUG, "Publishing: '$command_topic' => '$message'");
-	$mqtt->publish( $command_topic => $message );
+	$mqtt2->publish( $command_topic => $message );
 	timeout 10 => sub {
 
 		# your code goes were and will be interrupted if it runs
 		# for more than $nb_secs seconds.
-		$mqtt->run;
+		$mqtt2->run;
 	};
 	if ($@) {
 
 		# operation timed-out
 		warn "command response timed out";
-		$mqtt->unsubscribe($result_topic);
+		$mqtt2->unsubscribe($result_topic);
 		next MODULE;
 	}
 	chat( DEBUG, "Unsubscribing from: '$result_topic'" );
-	$mqtt->unsubscribe($result_topic);
+	$mqtt2->unsubscribe($result_topic);
 	return parse_response( $result, WARNING );
 }
 
