@@ -20,6 +20,8 @@ cp auto_ac.pl ${INSTALL_PATH}
 cp get_weather.pl ${INSTALL_PATH}
 cp sensors_collector.pl ${INSTALL_PATH}
 cp mqtt_autoreset.pl ${INSTALL_PATH}
+cp forecast_client.pl ${INSTALL_PATH}
+cp forecast_worker.pl ${INSTALL_PATH}
 
 
 cp lib/qmel.pm ${INSTALL_PATH}perl/

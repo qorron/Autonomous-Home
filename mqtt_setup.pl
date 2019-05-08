@@ -29,6 +29,7 @@ $beta = 1;
 
 my @reset_options = qw( FullTopic Module GroupTopic GPIO NtpServer Password Password MqttClient MqttHost MqttPassword MqttPort MqttUser Prefix Topic );
 my $select_module;
+my $fallback_suffix = '_fb';
 GetOptions(
 	"upgrade"       => \$upgrade,
 	"init"          => \$init,
@@ -39,6 +40,7 @@ GetOptions(
 	"dump-config=s" => \$dump_config,
 	"beta!"         => \$beta,
 	"module=s"      => \$select_module,
+	"fallback=s"    => \$fallback_suffix,
 );
 
 # common options like OTA url, mqtt host, logging and so on.
@@ -115,8 +117,8 @@ MODULE: for my $name ( keys %$modules ) {
 
 sub update_module {
 	my $name = shift;
-	my $command_topic = "cmnd/$name/Status"; # cmnd/DVES_80885E/Status -m '2'
-	my $result_topic = "stat/$name/STATUS2";
+	my $command_topic = "cmnd/$name$fallback_suffix/Status"; # cmnd/DVES_80885E/Status -m '2'
+	my $result_topic = "stat/$name$fallback_suffix/STATUS2";
 	my $response = send_command($command_topic, 2, $result_topic);
 	my $current_version = $response->{StatusFWR}{Program} // $response->{StatusFWR}{Version};
 	chat(INFO, "Module Version: $current_version");
@@ -124,7 +126,7 @@ sub update_module {
 		chat(INFO, "Setting Defaults");
 		set_defaults($name);
 		chat(INFO, "Upgrading...");
-		$mqtt->publish("cmnd/$name/Upgrade" => 1);
+		$mqtt->publish("cmnd/$name$fallback_suffix/Upgrade" => 1);
 		waitfor_module($name);
 	} else {
 		chat(INFO, "Module is up to date.");
@@ -141,7 +143,7 @@ sub waitfor_module {
 		my ( $topic, $message ) = @_;
 		my $respone = parse_response($message);
 		if ( exists $respone->{FallbackTopic} ) {
-			if ( $respone->{FallbackTopic} eq $name ) {
+			if ( $respone->{FallbackTopic} =~ /$name/ ) {
 				chat( ACTION, "Module '$name' came back online as '$respone->{Module}' with Version '$respone->{Version}'." );
 				$mqtt->{stop_loop} = 1;
 			}
@@ -234,8 +236,8 @@ sub set_option {
 	my ( $fallback, $option, $values ) = @_;
 
 	my $result;
-	my $command_topic = "cmnd/$fallback/$option";
-	my $result_topic = "stat/$fallback/RESULT";
+	my $command_topic = "cmnd/$fallback$fallback_suffix/$option";
+	my $result_topic = "stat/$fallback$fallback_suffix/RESULT";
 	$values = [$values] unless 'ARRAY' eq ref $values;
 	my %return;
 	for my $value (@$values) {

@@ -30,9 +30,11 @@ say $ow->dt;
 
 my $day = $weather->{cache}{yr_today};
 say ref $day;
+my @weather24;
 for my $day ( $weather->{cache}{yr_today}, $weather->{cache}{yr_tomorrow} ) {
 	foreach my $dp ( @{ $day->datapoints } ) {
 		my $start = $dp->from->hms;
+		push @weather24, $dp unless @weather24 > 24;
 		say ' ' x 4 . 'Temperature: ' . $dp->temperature->celsius . " $start ";
 	}
 	say '---';
@@ -41,3 +43,4 @@ say "max temp today (remaining day): $weather->{cache}{max_temp_today}";
 say "max temp tomorrow: $weather->{cache}{max_temp_tomorrow}";
 say "min temp today (remaining day): $weather->{cache}{min_temp_today}";
 say "min temp tomorrow: $weather->{cache}{min_temp_tomorrow}";
+say "temps in next 24h: $weather->{cache}{min_temp_24} / $weather->{cache}{avg_temp_24} / $weather->{cache}{max_temp_24}";
