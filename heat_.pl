@@ -22,14 +22,28 @@ use enum qw(ERROR WARNING ACTION INFO DEBUG);
 use lib qw( lib /usr/local/lib/home_automation/perl );
 use config;
 
+# historic tech dept:
+# originally, values were called by their german names like they appear in the ip-symcon output.
+# in the newer JSON data file however, we use shorter english names.
+# to not loose historic data, we switch to the new names in the code, but translate to the old names in munin output.
+# sorry about that.
+my %translate = (
+	floor        => 'Bodentemperatur',
+	room         => 'Raumtemperatur',
+	floor_target => 'floor_target',      # these do not change
+	powered      => 'powered',           # but would trigger a warning if left out
+);
+
+
+my $config = config->new();
+
 my $max_age = 360;
 
 my $verbose = ERROR;
 my %telemetry;
-my $data_file = '/tmp/heat.pl'; # TODO: use $config->{files}{heater_json_file}
 
 if ($ARGV[0] && $ARGV[0] eq 'autoconf') {
-	say 'yes' and exit if -e $data_file;
+	say 'yes' and exit if -e $config->{files}{heater_json_file};
 	say 'no';
 	exit;
 }
@@ -41,7 +55,11 @@ if ( $0 =~ /heat_([[:alnum:]]+)(?:_(\w+))?$/ ) {
 
 my $rooms;
 my $creation_time;
-eval slurp $data_file;
+#eval slurp $data_file;
+
+my $heater = decode_json( slurp $config->{files}{heater_json_file} );
+$rooms = $heater->{rooms};
+$creation_time = $heater->{creation_time};
 
 if ($ARGV[0] && $ARGV[0] eq 'suggest') {
 	if (defined $rooms) {
@@ -95,7 +113,7 @@ if ($mode eq 'powers') {
 	#$lower = 10;
 	#$upper = 40;
 	for my $room_key (@rooms) {
-		push @values, "$room_key.value $rooms->{$room_key}{Raumtemperatur}";
+		push @values, "$room_key.value $rooms->{$room_key}{room}";
 		push @config, "$room_key.label $rooms->{$room_key}{name}";
 	}
 } elsif ($mode eq 'floors') {
@@ -104,7 +122,7 @@ if ($mode eq 'powers') {
 	#$lower = 10;
 	#$upper = 40;
 	for my $room_key (@rooms) {
-		push @values, "$room_key.value $rooms->{$room_key}{Bodentemperatur}";
+		push @values, "$room_key.value $rooms->{$room_key}{floor}";
 		push @config, "$room_key.label $rooms->{$room_key}{name}";
 	}
 } elsif ($mode eq 'r2ii') {
@@ -121,17 +139,17 @@ if ($mode eq 'powers') {
 	$info = '';
 	#$lower = 0;
 	#$upper = 40;
-	my @measurements = qw(Raumtemperatur Bodentemperatur floor_target) ;
+	my @measurements = qw(room floor floor_target) ;
 	for my $measurement ( @measurements ) {
 		next unless defined $rooms->{$room}{$measurement};
-		push @values, "${room}_$measurement.value $rooms->{$room}{$measurement}";
-		push @config, "${room}_$measurement.label $rooms->{$room}{name} $measurement";
+		push @values, "${room}_$translate{$measurement}.value $rooms->{$room}{$measurement}";
+		push @config, "${room}_$translate{$measurement}.label $rooms->{$room}{name} $translate{$measurement}";
 	}
 	push @values, "${room}_powered.value ".($rooms->{$room}{powered} ? 10 : 0);
 	push @config, "${room}_powered.label $rooms->{$room}{name} Powered";
 	push @config, "${room}_powered.info 0 when off, 10 when on.";
 	push @config, "${room}_powered.draw AREA";
-	$values = join ' ', map {"${room}_$_"} @measurements, "powered";
+	$values = join ' ', map {"${room}_$translate{$_}"} @measurements, "powered";
 }
 
 if ( $ARGV[0] && $ARGV[0] eq 'config' ) {
