@@ -159,7 +159,19 @@ if ( $power_budget > $high_surplus) {
 	$high_power_available = 1;
 	push @facts, 'high_power';
 }
-if ( $power_budget < $remove_surplus && @on ) {
+if (0) {
+}
+elsif(0 && $power_budget < 0 && @on ) {
+	# no power left, remove all running devices
+	# disable for now
+	for my $device (@on) {
+		$device->{power}  = 0;
+		$device->{reason} = 'no power';
+		push @actions, $device;
+		shift @on;
+	}
+}
+elsif ( $power_budget < $remove_surplus && @on ) {
 
 	# power running low, remove device with the lowest demand_off
 	my $device = shift @on;
