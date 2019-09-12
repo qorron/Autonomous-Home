@@ -27,8 +27,8 @@ graph_order Temperature max24h avg24h min24h avg_room avg_floor
 
 Temperature.label Temperature
 max24h.label Max. Temp. in 24h
-avg24h.label Min. Temp. in 24h
-min24h.label Avg. Temp. in 24h
+avg24h.label Avg. Temp. in 24h
+min24h.label Min. Temp. in 24h
 avg_room.label Avg. Room Temp.
 avg_floor.label Avg. Floor Temp.
 BLA
