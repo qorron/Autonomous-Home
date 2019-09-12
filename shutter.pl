@@ -30,11 +30,13 @@ use DateTime;
 use lib qw( lib /usr/local/lib/home_automation/perl );
 use get_weather;
 use config;
-
+use tahoma;
 
 my $tz = DateTime::TimeZone->new( name => 'local');
 
 my $config = config->new();
+
+my $tahoma = tahoma->new(username => $config->{tahoma}{username}, password => $config->{tahoma}{password});
 
 my $latitude              = $config->{latitude};
 my $longitude             = $config->{longitude};
@@ -105,22 +107,29 @@ if (   $sun_rise =~ /$qr_time/
 					down => 1000 * ( $sun_rise - $now ),
 					up   => 1000 * ( $sun_set - $now ),
 				);
+				my %action_times = (
+					down => $sun_rise,
+					up   => $sun_set,
+				);
 				say strftime('%Y-%m-%d %X %Z',gmtime());
 				my $offset;
-				for my $preset ( keys %{ $config->{shutter}{presets} } ) {
+				my $action_time;
+				for my $preset ( keys %{ $config->{shutter}{tahoma_presets} } ) {
 					next unless $preset =~ /^day_/;    # skip night shutters for now.
-					next unless $config->{shutter}{presets}{$preset};
+					next unless $config->{shutter}{tahoma_presets}{$preset};
 					my $motion;
-					
 					if ( $preset =~ /(up|down)$/ ) {
 						$motion = $1;
 						$offset = $offset{$motion} + $config->{shutter}{offsets}{$preset};
-						my $dt = DateTime->from_epoch( epoch => ( $now + ( $offset / 1000 ) ) );
+						$action_time = $action_times{$motion} + $config->{shutter}{offsets}{$preset};
+						my $dt = DateTime->from_epoch( epoch => ($action_time) );
 						$dt->set_time_zone($tz);
 						say "$sun_rise $sun_set $preset at " . $dt->datetime. " ". $dt->time_zone_long_name()." ".$dt->time_zone_short_name();
-						
-						
-						execute("/opt/fhem/fhem.pl 7072 'set $config->{shutter}{presets}{$preset} startAt $offset'");
+						say "start_action_group_at($config->{shutter}{tahoma_presets}{$preset}, $action_time)";
+						my $action_id =  $tahoma->start_action_group_at($config->{shutter}{tahoma_presets}{$preset}, $action_time) if $doit;
+						die "request failed, bail out to avoid rate blocking" unless $action_id;
+						say $action_id;
+						# execute("/opt/fhem/fhem.pl 7072 'set $config->{shutter}{presets}{$preset} startAt $offset'");
 					}
 				}
 			}
