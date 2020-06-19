@@ -24,12 +24,27 @@ use File::Slurp qw(slurp);
 
 use POSIX;
 use List::Util qw(sum);
+use Time::Out qw(timeout) ;
+use PID::File;
+
 
 use lib qw( lib /usr/local/lib/home_automation/perl );
 use Net::Pushover;
 use qmel;
 use get_weather;
 use config;
+use Net::MQTT::Simple;
+
+use PID::File;
+ 
+my $pid_file = PID::File->new;
+$pid_file->file( '/tmp/auto_ac.pid' );
+ 
+exit if $pid_file->running;
+$pid_file->create or die 'could not create pid-file';
+$pid_file->guard;
+ 
+
 
 my $cron_mode = $ARGV[0];
 my @title = ('AC');
@@ -41,6 +56,8 @@ my $push = Net::Pushover->new(
   token => $config->{keys}{pushover_app},
   user  => $config->{keys}{pushover_user},
 );
+
+my $mqtt = Net::MQTT::Simple->new( $config->{host}{mqtt} );
 
 my $weather = get_weather->new( max_age => ( 2 * 3600 ) );    # seconds
 
@@ -59,6 +76,9 @@ my $high_power_available = 0;
 my %rooms = %{ $config->{ac}{rooms} };
 
 my $qmel = qmel->new( rooms => \%rooms); 
+
+
+
 
 my $heater = decode_json( slurp $config->{files}{heater_json_file} );
 my $winter =
@@ -147,7 +167,41 @@ for my $ac ( keys %rooms ) {
 		say "$ac is not auto $state->{OperationMode}";
 	}
 }
-@off = sort { $b->{demand_on} <=> $a->{demand_on} } @off;
+
+# get AC lockouts from MQTT
+my %missing_rooms = (map {$_ => 1} keys %rooms);
+my %room_lockout;
+
+# do this at the latest possible way because this scipt 
+# takes ages to load and run due to slow weather module and api calls.
+# so, if someone triggered a lockout change accidentally leave
+# some time to get the latest value of lockouts.
+timeout 3 => sub {
+
+	# your code goes were and will be interrupted if it runs
+	# for more than $nb_secs seconds.
+	$mqtt->run(
+		"ac/lockout/+" => sub {
+			my ( $full_topic, $message ) = @_;
+			my $room = $full_topic;
+			$room =~ s{^.*/}{};
+			if ( exists $missing_rooms{$room} ) {
+				say "Lockout $room = $message";
+				$room_lockout{$room} = $message;
+				delete $missing_rooms{$room};
+			}
+			$mqtt->{stop_loop} = 1 unless keys %missing_rooms;
+		},
+	);
+};
+if ($@) {
+
+	# operation timed-out
+	warn "command response timed out, missing rooms: " . join ' ', keys %missing_rooms;
+}
+$mqtt->unsubscribe("ac/lockout/+");
+
+@off = sort { $b->{demand_on} <=> $a->{demand_on} } grep { ! $room_lockout{ $_->{name} } } @off;
 @on  = sort { $a->{demand_off} <=> $b->{demand_off} } @on;
 
 say __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\@off], ['off']);
@@ -159,6 +213,16 @@ if ( $power_budget > $high_surplus) {
 	$high_power_available = 1;
 	push @facts, 'high_power';
 }
+# turn off devices with lockout, others remain in @on
+@on = grep {
+	if ( exists $room_lockout{ $_->{Name} } ) {
+		$_->{power}  = 0;
+		$_->{reason} = 'lockout';
+		push @actions, $_;
+	}
+	else {$_}
+} @on;
+
 if (0) {
 }
 elsif(0 && $power_budget < 0 && @on ) {
@@ -254,8 +318,9 @@ $push->message(
   text => $text,
 	priority => 0,
 ) if $cron_mode && @actions;
-exit;
 
+$pid_file->remove;
+unlink '/tmp/run_auto_ac';
 sub median {
 	sum( ( sort { $a <=> $b } @_ )[int( $#_ / 2 ), ceil( $#_ / 2 )] ) / 2;
 }
