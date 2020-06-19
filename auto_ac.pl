@@ -215,7 +215,7 @@ if ( $power_budget > $high_surplus) {
 }
 # turn off devices with lockout, others remain in @on
 @on = grep {
-	if ( exists $room_lockout{ $_->{Name} } ) {
+	if ( $room_lockout{ $_->{name} } ) {
 		$_->{power}  = 0;
 		$_->{reason} = 'lockout';
 		push @actions, $_;
