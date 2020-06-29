@@ -126,9 +126,12 @@ if (   $sun_rise =~ /$qr_time/
 						$dt->set_time_zone($tz);
 						say "$sun_rise $sun_set $preset at " . $dt->datetime. " ". $dt->time_zone_long_name()." ".$dt->time_zone_short_name();
 						say "start_action_group_at($config->{shutter}{tahoma_presets}{$preset}, $action_time)";
-						my $action_id =  $tahoma->start_action_group_at($config->{shutter}{tahoma_presets}{$preset}, $action_time) if $doit;
-						die "request failed, bail out to avoid rate blocking" unless $action_id;
-						say $action_id;
+						if ($doit) {
+							my $action_id =
+								$tahoma->start_action_group_at( $config->{shutter}{tahoma_presets}{$preset}, $action_time );
+							die "request failed, bail out to avoid rate blocking" unless $action_id;
+							say $action_id;
+						}
 						# execute("/opt/fhem/fhem.pl 7072 'set $config->{shutter}{presets}{$preset} startAt $offset'");
 					}
 				}
