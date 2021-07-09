@@ -1,0 +1,13 @@
+[Unit]
+Description=Automatic MQTT Thing
+After=network.target auditd.service
+
+[Service]
+ExecStart=/usr/local/lib/home_automation/autoqt.pl
+KillMode=process
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+Alias=autoqt.service
