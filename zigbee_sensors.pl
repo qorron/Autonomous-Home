@@ -19,6 +19,8 @@ my $now = time;
 for my $file (
     path('/var/local/home_automation/')->children(qr'^zigbee_temper_hum_') )
 {
+	my $file_age = time - $file->stat->mtime;
+	next if $file_age > 24*3600;
     my $module_name;
     $module_name = $1 if $file =~ /zigbee_temper_hum_(\w+)\.json/;
     my $sensor_data = decode_json( $file->slurp_raw );
